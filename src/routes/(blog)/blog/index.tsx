@@ -7,13 +7,16 @@ import { fetchPosts } from "~/utils/posts";
 import { SITE } from "~/config.mjs";
 
 export default component$(() => {
+  console.log("This LOG MAYBE WORKS");
   const store = useStore<{ posts: Post[] }>({
     posts: [],
   });
 
   useTask$(async () => {
+    console.log("Thisi s whatever");
     if (isServer) {
       const posts = await fetchPosts();
+      console.log(posts);
       store.posts = posts.map((post: Post) => ({ ...post }));
     }
   });

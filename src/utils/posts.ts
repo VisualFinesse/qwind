@@ -1,24 +1,59 @@
 import fs from "fs";
 import matter from "gray-matter";
+import axios from 'axios';
 
 import type { Post } from "~/types";
 
-const BLOG_DIR = "src/content/post";
+// Function to fetch posts from Strapi API
+export const fetchPosts = async () => {
+  try {
+      // Make GET request to your Strapi API endpoint for posts
+      const response = await axios.get('http://127.0.0.1:1337/api/lessons/');
 
-const load = () => {
-  const files = fs.readdirSync(BLOG_DIR);
+      // Extract posts data from response
+      const posts = response.data.data;
 
-  const posts = Promise.all(
-    files
-      .filter((filename) => filename.endsWith(".md"))
-      .map(async (filename) => {
-        const slug = filename.replace(".md", "");
-        return await findPostBySlug(slug);
-      })
-    // .sort((post1, post2) => (post1.date > post2.date ? -1 : 1))
-  );
+      console.log(posts);
 
-  return posts;
+      // Map over posts to format them if needed
+      const formattedPosts = posts.map((post:any) => {
+        return {
+          content: post.attributes.body,
+          id: post.id,
+          slug: post.attributes.slug,
+
+          publishDate: new Date(post.attributes.publishedAt),
+
+          title: post.attributes.Title,
+        };
+      });
+
+      return formattedPosts;
+  } catch (error:any) {
+      // Handle error if request fails
+      console.error('Error fetching posts:', error.message);
+      return [];
+  }
+};
+
+
+export const fetchPostByID = async (id:any) => {
+  try {
+      // Make GET request to your Strapi API endpoint for posts
+      const response = await axios.get('http://127.0.0.1:1337/api/lessons/' + id);
+
+      // Extract post data from response
+      const post = response.data.data;
+
+      // Map over post to format them if needed
+      const formattedPost = post;
+
+      return formattedPost;
+  } catch (error:any) {
+      // Handle error if request fails
+      console.error('Error fetching posts:', error.message);
+      return [];
+  }
 };
 
 let _posts: Post[];
@@ -38,12 +73,12 @@ let _posts: Post[];
 // })
 
 /** */
-export const fetchPosts = async (): Promise<Post[]> => {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  _posts = _posts || load();
+// export const fetchPosts = async (): Promise<Post[]> => {
+//   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+//   _posts = _posts || load();
 
-  return await _posts;
-};
+//   return await _posts;
+// };
 
 /** */
 export const findLatestPosts = async ({ count, page }: { count?: number; page?: number } = {}): Promise<Post[]> => {
@@ -59,45 +94,45 @@ export const findPostBySlug = async (slug: string): Promise<Post | null> => {
   if (!slug) return null;
 
   try {
-    const readFile = fs.readFileSync(BLOG_DIR + `/${slug}.md`, "utf-8");
-    const { data, content } = matter(readFile);
+    const readFile = await fetchPostByID(slug);
 
-    const {
-      publishDate: rawPublishDate = new Date(),
-      updateDate: rawUpdateDate,
-      title,
-      excerpt,
-      image,
-      tags = [],
-      category,
-      author,
-      draft = false,
-      metadata = {},
-    } = data;
+    // const {
+    //   publishDate: rawPublishDate = new Date(),
+    //   updateDate: rawUpdateDate,
+    //   title,
+    //   excerpt,
+    //   image,
+    //   tags = [],
+    //   category,
+    //   author,
+    //   draft = false,
+    //   metadata = {},
+    // } = data;
 
-    const publishDate = new Date(rawPublishDate);
-    const updateDate = rawUpdateDate ? new Date(rawUpdateDate) : undefined;
+    // const publishDate = new Date(rawPublishDate);
+    // const updateDate = rawUpdateDate ? new Date(rawUpdateDate) : undefined;
 
     return {
-      id: slug,
-      slug: slug,
+      content: readFile.attributes.body,
+      id: readFile.id,
+      slug: readFile.attributes.slug,
 
-      publishDate: publishDate,
-      updateDate: updateDate,
+      publishDate: readFile.attributes.publishedAt,
+      // updateDate: updateDate,
 
-      title: title,
-      excerpt: excerpt,
-      image: image,
+      title: readFile.attributes.Title,
+      // excerpt: excerpt,
+      // image: image,
 
-      category: category,
-      tags: tags,
-      author: author,
+      // category: category,
+      // tags: tags,
+      // author: author,
 
-      draft: draft,
+      // draft: draft,
 
-      metadata,
+      // metadata,
 
-      content
+      // content
     };
   } catch (e) {
     /* empty */
